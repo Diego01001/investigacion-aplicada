@@ -46,8 +46,7 @@ namespace GestionReservas.Services
             // Validar choque de horarios
             var reservasExistentes = await _context.Reservas
                 .Where(r => r.EspacioId == reserva.EspacioId && 
-                            r.Fecha == reserva.Fecha && 
-                            r.Estado != "Cancelada")
+                            r.Fecha == reserva.Fecha)
                 .ToListAsync();
 
             bool hayChoque = reservasExistentes.Any(r =>
@@ -71,9 +70,9 @@ namespace GestionReservas.Services
             var reserva = await _context.Reservas.FindAsync(id);
             if (reserva == null) return (false, "La reserva no existe.");
 
-            reserva.Estado = "Cancelada";
+            _context.Reservas.Remove(reserva);
             await _context.SaveChangesAsync();
-            return (true, "Reserva cancelada con éxito.");
+            return (true, "Reserva eliminada con éxito.");
         }
 
         public async Task<IEnumerable<Espacio>> ObtenerEspaciosAsync()
