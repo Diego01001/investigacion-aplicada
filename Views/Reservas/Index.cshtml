@@ -1,0 +1,140 @@
+@{
+    ViewData["Title"] = "Reserva de Espacios";
+}
+
+<link rel="stylesheet" href="~/css/reservas.css" />
+
+<div class="container py-4">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold text-primary">Sistema de Reservas Universitarias</h1>
+            <p class="lead text-muted">Gestión eficiente de espacios para la comunidad académica.</p>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Fecha</label>
+                    <input type="date" id="filtroFecha" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Espacio</label>
+                    <select id="filtroEspacio" class="form-select">
+                        <option value="">-- Todos --</option>
+                        @foreach (var e in ViewBag.Espacios)
+                        {
+                            <option value="@e.Id">@e.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Estado</label>
+                    <select id="filtroEstado" class="form-select">
+                        <option value="">-- Todos --</option>
+                        <option value="Vigente">Vigente</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button id="btnLimpiarFiltros" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-sync-alt"></i> Restablecer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado con Botonera -->
+    <div class="card shadow border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">Reservas de Hoy</h5>
+            <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
+                <i class="fas fa-plus"></i> Nueva Reserva
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th># ID</th>
+                            <th>Solicitante</th>
+                            <th>Espacio</th>
+                            <th>Fecha</th>
+                            <th>Horario</th>
+                            <th>Estado</th>
+                            <th>Motivo</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- AJAX -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Registro -->
+<div class="modal fade" id="modalNuevaReserva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Registrar Nueva Reserva</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="reservaForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre del Solicitante</label>
+                            <input type="text" id="Solicitante" class="form-control" placeholder="Nombre completo" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Correo Institucional</label>
+                            <input type="email" id="Correo" class="form-control" placeholder="correo@udeg.mx" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Espacio</label>
+                            <select id="EspacioId" class="form-select" required>
+                                <option value="">Seleccione un espacio...</option>
+                                @foreach (var e in ViewBag.Espacios)
+                                {
+                                    <option value="@e.Id">@e.Nombre (@e.Capacidad personas) - @e.Ubicacion</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" id="Fecha" class="form-control" required min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Hora Inicio</label>
+                            <input type="time" id="HoraInicio" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Hora Fin</label>
+                            <input type="time" id="HoraFin" class="form-control" required />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Motivo Académico</label>
+                            <textarea id="Motivo" class="form-control" rows="2" placeholder="Describa el motivo de la reserva" required></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" id="btnGuardar" class="btn btn-primary px-5">Guardar Reserva</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/reservas.js"></script>
+}

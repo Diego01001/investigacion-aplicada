@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+appsettings.Development.json
+dist/
+node_modules/
