@@ -46,39 +46,54 @@ function cargarReservas() {
             const data = Array.isArray(response) ? response : (response.value || []);
             
             if (data.length === 0) {
-                rows = '<tr><td colspan="8" class="text-center text-muted">No se encontraron reservas con los filtros seleccionados.</td></tr>';
+                rows = '<tr><td colspan="6" class="text-center py-5 text-muted">No se encontraron reservas con los filtros seleccionados.</td></tr>';
             } else {
                 data.forEach(item => {
-                    // Check for both casing just in case
                     const estado = item.estado || item.Estado || '';
                     const isVigente = estado.toLowerCase() === 'vigente';
-                    const statusBadge = isVigente ? 'bg-success' : 'bg-danger';
+                    const statusBadge = isVigente ? 'bg-success-light' : 'bg-danger-light';
                     const canCancel = isVigente;
 
                     rows += `
                         <tr>
-                            <td>${item.id || item.Id}</td>
+                            <td><span class="fw-bold text-primary">#${item.id || item.Id}</span></td>
                             <td>
-                                <strong>${item.solicitante || item.Solicitante}</strong><br>
-                                <small class="text-muted">${item.correo || item.Correo}</small>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">${item.solicitante || item.Solicitante}</div>
+                                        <div class="small text-muted">${item.correo || item.Correo}</div>
+                                    </div>
+                                </div>
                             </td>
-                            <td>${(item.espacio || item.Espacio)?.nombre || (item.espacio || item.Espacio)?.Nombre || 'N/A'}</td>
-                            <td>${new Date(item.fecha || item.Fecha).toLocaleDateString()}</td>
-                            <td>${(item.horaInicio || item.HoraInicio).substring(0, 5)} - ${(item.horaFin || item.HoraFin).substring(0, 5)}</td>
+                            <td>
+                                <div class="fw-medium">${(item.espacio || item.Espacio)?.nombre || 'N/A'}</div>
+                                <div class="small text-muted">${(item.espacio || item.Espacio)?.ubicacion || ''}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="far fa-clock text-primary me-2"></i>
+                                    <div>
+                                        <div>${new Date(item.fecha || item.Fecha).toLocaleDateString()}</div>
+                                        <div class="small text-primary fw-semibold">${(item.horaInicio || item.HoraInicio).substring(0, 5)} - ${(item.horaFin || item.HoraFin).substring(0, 5)}</div>
+                                    </div>
+                                </div>
+                            </td>
                             <td><span class="badge ${statusBadge}">${estado}</span></td>
-                            <td>${item.motivo || item.Motivo}</td>
                             <td class="text-center">
                                 ${canCancel ? 
-                                    `<button class="btn btn-outline-danger btn-sm" onclick="confirmarCancelacion(${item.id || item.Id})">
-                                        <i class="fas fa-times-circle"></i> Cancelar
+                                    `<button class="btn btn-outline-danger btn-sm border-0" onclick="confirmarCancelacion(${item.id || item.Id})">
+                                        <i class="fas fa-trash-alt"></i>
                                      </button>` : 
-                                    '<span class="text-muted">-</span>'}
+                                    '<span class="text-muted small">Sin acciones</span>'}
                             </td>
                         </tr>
                     `;
                 });
             }
-            $('#tableBody').html(rows);
+            $('#tableBody').hide().html(rows).fadeIn(400);
         },
         error: function () {
             mostrarAlerta('error', 'No se pudieron cargar las reservas.');
