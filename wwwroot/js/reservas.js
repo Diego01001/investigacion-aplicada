@@ -1,23 +1,26 @@
 /**
- * Lógica de jQuery y AJAX para la gestión de reservas
+ * Lógica de jQuery y AJAX para la gestión de reservas.
+ * Este archivo maneja la carga, registro, filtrado y cancelación de reservas
+ * sin recargar completamente la página.
  */
 
 $(document).ready(function () {
-    // Carga inicial
+    // Carga las reservas al abrir la página.
     cargarReservas();
 
-    // Evento de guardado
+    // Evento para registrar una nueva reserva desde el formulario.
     $('#btnGuardar').on('click', function () {
         if (validarFormulario()) {
             registrarReserva();
         }
     });
 
-    // Filtros
+    // Cada vez que cambia un filtro, se recarga la tabla de reservas.
     $('#filtroFecha, #filtroEspacio, #filtroEstado').on('change', function () {
         cargarReservas();
     });
 
+    // Limpia los filtros y vuelve a mostrar todas las reservas.
     $('#btnLimpiarFiltros').on('click', function () {
         $('#filtroFecha, #filtroEspacio, #filtroEstado').val('');
         cargarReservas();
@@ -25,15 +28,18 @@ $(document).ready(function () {
 });
 
 /**
- * Obtiene las reservas del servidor mediante AJAX
+ * Obtiene las reservas desde el servidor mediante AJAX
+ * y actualiza dinámicamente la tabla.
  */
 function cargarReservas() {
+    // Se toman los valores actuales de los filtros.
     const filtros = {
         fecha: $('#filtroFecha').val(),
         espacioId: $('#filtroEspacio').val(),
         estado: $('#filtroEstado').val()
     };
 
+    // Mensaje temporal mientras se cargan los datos.
     $('#tableBody').html('<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>');
 
     $.ajax({
@@ -42,12 +48,14 @@ function cargarReservas() {
         data: filtros,
         success: function (response) {
             let rows = '';
-            // Handle both direct array and wrapped { value: [] } responses
+
+            // Se adapta la respuesta por si llega como arreglo directo o dentro de una propiedad value.
             const data = Array.isArray(response) ? response : (response.value || []);
-            
+
             if (data.length === 0) {
                 rows = '<tr><td colspan="6" class="text-center py-5 text-muted">No se encontraron reservas con los filtros seleccionados.</td></tr>';
             } else {
+                // Construye las filas de la tabla con las reservas recibidas.
                 data.forEach(item => {
                     const estado = item.estado || item.Estado || '';
                     const isVigente = estado.toLowerCase() === 'vigente';
@@ -93,6 +101,8 @@ function cargarReservas() {
                     `;
                 });
             }
+
+            // Reemplaza el contenido de la tabla con animación.
             $('#tableBody').hide().html(rows).fadeIn(400);
         },
         error: function () {
@@ -102,9 +112,10 @@ function cargarReservas() {
 }
 
 /**
- * Registra una nueva reserva
+ * Envía los datos del formulario al servidor para registrar una reserva.
  */
 function registrarReserva() {
+    // Se obtienen los valores ingresados por el usuario.
     const data = {
         Solicitante: $('#Solicitante').val(),
         Correo: $('#Correo').val(),
@@ -121,6 +132,7 @@ function registrarReserva() {
         data: data,
         success: function (res) {
             if (res.success) {
+                // Si se guarda correctamente, se cierra el modal, se limpia el formulario y se actualiza la tabla.
                 cerrarModal();
                 $('#reservaForm')[0].reset();
                 cargarReservas();
@@ -136,7 +148,7 @@ function registrarReserva() {
 }
 
 /**
- * Cancela una reserva existente
+ * Solicita confirmación y cancela una reserva existente mediante AJAX.
  */
 function confirmarCancelacion(id) {
     if (confirm('¿Está seguro de que desea cancelar esta reserva?')) {
@@ -146,6 +158,7 @@ function confirmarCancelacion(id) {
             data: { id: id },
             success: function (res) {
                 if (res.success) {
+                    // Si la cancelación fue exitosa, se actualiza la tabla.
                     cargarReservas();
                     mostrarAlerta('success', res.message);
                 } else {
@@ -157,14 +170,17 @@ function confirmarCancelacion(id) {
 }
 
 /**
- * Validaciones del lado del cliente
+ * Valida los campos del formulario antes de enviar la reserva al servidor.
  */
 function validarFormulario() {
     let isValid = true;
+
+    // Limpia marcas de error anteriores.
     $('.form-control').removeClass('is-invalid');
 
     const campos = ['Solicitante', 'Correo', 'EspacioId', 'Fecha', 'HoraInicio', 'HoraFin', 'Motivo'];
-    
+
+    // Valida que los campos obligatorios no estén vacíos.
     campos.forEach(id => {
         const val = $(`#${id}`).val();
         if (!val || val.trim() === '') {
@@ -173,7 +189,7 @@ function validarFormulario() {
         }
     });
 
-    // Validar sentido de horas
+    // Valida que la hora de fin sea mayor que la hora de inicio.
     const h1 = $('#HoraInicio').val();
     const h2 = $('#HoraFin').val();
     if (h1 && h2 && h1 >= h2) {
@@ -185,19 +201,28 @@ function validarFormulario() {
     return isValid;
 }
 
+/**
+ * Cierra el modal donde se registra una nueva reserva.
+ */
 function cerrarModal() {
     const modalEl = document.getElementById('modalNuevaReserva');
     const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
     modal.hide();
 }
 
+/**
+ * Muestra una alerta visual de éxito o error en la parte superior de la página.
+ */
 function mostrarAlerta(tipo, mensaje) {
-    // Podría ser un Toast, usamos alert simple pero claro
     const color = tipo === 'success' ? 'alert-success' : 'alert-danger';
+
     const html = `<div class="alert ${color} alert-dismissible fade show fixed-top m-3 shadow" role="alert" style="z-index: 9999;">
                     ${mensaje}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                   </div>`;
+
     $('body').append(html);
+
+    // Cierra automáticamente la alerta después de unos segundos.
     setTimeout(() => { $('.alert').alert('close'); }, 4000);
 }
