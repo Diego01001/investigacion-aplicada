@@ -1,6 +1,6 @@
 /**
  * Lógica de jQuery y AJAX para la gestión de reservas.
- * Este archivo maneja la carga, registro, filtrado y cancelación de reservas
+ * Este archivo maneja la carga, registro, filtrado, cancelación y eliminación de reservas
  * sin recargar completamente la página.
  */
 
@@ -32,14 +32,12 @@ $(document).ready(function () {
  * y actualiza dinámicamente la tabla.
  */
 function cargarReservas() {
-    // Se toman los valores actuales de los filtros.
     const filtros = {
         fecha: $('#filtroFecha').val(),
         espacioId: $('#filtroEspacio').val(),
         estado: $('#filtroEstado').val()
     };
 
-    // Mensaje temporal mientras se cargan los datos.
     $('#tableBody').html('<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>');
 
     $.ajax({
@@ -58,9 +56,12 @@ function cargarReservas() {
                 // Construye las filas de la tabla con las reservas recibidas.
                 data.forEach(item => {
                     const estado = item.estado || item.Estado || '';
-                    const isVigente = estado.toLowerCase() === 'vigente';
+                    const estadoNormalizado = estado.trim().toLowerCase();
+
+                    const isVigente = estadoNormalizado === 'vigente';
+                    const isCancelada = estadoNormalizado === 'cancelada';
+
                     const statusBadge = isVigente ? 'bg-success-light' : 'bg-danger-light';
-                    const canCancel = isVigente;
 
                     rows += `
                         <tr>
@@ -91,18 +92,21 @@ function cargarReservas() {
                             </td>
                             <td><span class="badge ${statusBadge}">${estado}</span></td>
                             <td class="text-center">
-                                ${canCancel ? 
-                                    `<button class="btn btn-outline-danger btn-sm border-0" onclick="confirmarCancelacion(${item.id || item.Id})">
-                                        <i class="fas fa-trash-alt"></i>
-                                     </button>` : 
-                                    '<span class="text-muted small">Sin acciones</span>'}
+                                ${isVigente ?
+                            `<button class="btn btn-outline-warning btn-sm" onclick="confirmarCancelacion(${item.id || item.Id})">
+                                        Cancelar
+                                     </button>` :
+                            isCancelada ?
+                                `<button class="btn btn-outline-danger btn-sm" onclick="confirmarEliminacion(${item.id || item.Id})">
+                                        Eliminar
+                                     </button>` :
+                                '<span class="text-muted small">Sin acciones</span>'}
                             </td>
                         </tr>
                     `;
                 });
             }
 
-            // Reemplaza el contenido de la tabla con animación.
             $('#tableBody').hide().html(rows).fadeIn(400);
         },
         error: function () {
@@ -115,7 +119,6 @@ function cargarReservas() {
  * Envía los datos del formulario al servidor para registrar una reserva.
  */
 function registrarReserva() {
-    // Se obtienen los valores ingresados por el usuario.
     const data = {
         Solicitante: $('#Solicitante').val(),
         Correo: $('#Correo').val(),
@@ -132,7 +135,6 @@ function registrarReserva() {
         data: data,
         success: function (res) {
             if (res.success) {
-                // Si se guarda correctamente, se cierra el modal, se limpia el formulario y se actualiza la tabla.
                 cerrarModal();
                 $('#reservaForm')[0].reset();
                 cargarReservas();
@@ -148,7 +150,8 @@ function registrarReserva() {
 }
 
 /**
- * Solicita confirmación y cancela una reserva existente mediante AJAX.
+ * Solicita confirmación y cancela una reserva vigente mediante AJAX.
+ * La reserva no se elimina; solo cambia a estado Cancelada.
  */
 function confirmarCancelacion(id) {
     if (confirm('¿Está seguro de que desea cancelar esta reserva?')) {
@@ -158,12 +161,38 @@ function confirmarCancelacion(id) {
             data: { id: id },
             success: function (res) {
                 if (res.success) {
-                    // Si la cancelación fue exitosa, se actualiza la tabla.
                     cargarReservas();
                     mostrarAlerta('success', res.message);
                 } else {
                     mostrarAlerta('error', res.message);
                 }
+            },
+            error: function () {
+                mostrarAlerta('error', 'No se pudo cancelar la reserva.');
+            }
+        });
+    }
+}
+
+/**
+ * Solicita confirmación y elimina definitivamente una reserva cancelada mediante AJAX.
+ */
+function confirmarEliminacion(id) {
+    if (confirm('¿Está seguro de que desea eliminar definitivamente esta reserva?')) {
+        $.ajax({
+            url: '/Reservas/Eliminar',
+            type: 'POST',
+            data: { id: id },
+            success: function (res) {
+                if (res.success) {
+                    cargarReservas();
+                    mostrarAlerta('success', res.message);
+                } else {
+                    mostrarAlerta('error', res.message);
+                }
+            },
+            error: function () {
+                mostrarAlerta('error', 'No se pudo eliminar la reserva.');
             }
         });
     }
@@ -183,6 +212,7 @@ function validarFormulario() {
     // Valida que los campos obligatorios no estén vacíos.
     campos.forEach(id => {
         const val = $(`#${id}`).val();
+
         if (!val || val.trim() === '') {
             $(`#${id}`).addClass('is-invalid');
             isValid = false;
@@ -192,6 +222,7 @@ function validarFormulario() {
     // Valida que la hora de fin sea mayor que la hora de inicio.
     const h1 = $('#HoraInicio').val();
     const h2 = $('#HoraFin').val();
+
     if (h1 && h2 && h1 >= h2) {
         $('#HoraFin').addClass('is-invalid');
         alert('La hora de fin debe ser mayor a la de inicio.');
@@ -207,6 +238,7 @@ function validarFormulario() {
 function cerrarModal() {
     const modalEl = document.getElementById('modalNuevaReserva');
     const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+
     modal.hide();
 }
 
@@ -224,5 +256,7 @@ function mostrarAlerta(tipo, mensaje) {
     $('body').append(html);
 
     // Cierra automáticamente la alerta después de unos segundos.
-    setTimeout(() => { $('.alert').alert('close'); }, 4000);
+    setTimeout(() => {
+        $('.alert').alert('close');
+    }, 4000);
 }

@@ -8,8 +8,13 @@ namespace GestionReservas.Services
     public interface IReservaService
     {
         Task<IEnumerable<Reserva>> ObtenerReservasAsync(DateTime? fecha, int? espacioId, string estado);
+
         Task<(bool Success, string Message)> RegistrarReservaAsync(Reserva reserva);
+
         Task<(bool Success, string Message)> CancelarReservaAsync(int id);
+
+        Task<(bool Success, string Message)> EliminarReservaAsync(int id);
+
         Task<IEnumerable<Espacio>> ObtenerEspaciosAsync();
     }
 }

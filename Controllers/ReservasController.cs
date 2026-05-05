@@ -11,14 +11,14 @@ namespace GestionReservas.Controllers
         // Servicio que contiene la lógica de negocio relacionada con las reservas.
         private readonly IReservaService _reservaService;
 
-        // El servicio se recibe por inyección de dependencias.
+        // ASP.NET Core inyecta aquí el servicio configurado en Program.cs.
         public ReservasController(IReservaService reservaService)
         {
             _reservaService = reservaService;
         }
 
         // Muestra la vista principal de reservas.
-        // También carga los espacios disponibles para mostrarlos en los select del formulario y filtros.
+        // También carga los espacios disponibles para el formulario y los filtros.
         public async Task<IActionResult> Index()
         {
             ViewBag.Espacios = await _reservaService.ObtenerEspaciosAsync();
@@ -26,7 +26,7 @@ namespace GestionReservas.Controllers
         }
 
         // Devuelve las reservas en formato JSON.
-        // Este método es llamado desde jQuery/AJAX para cargar o filtrar la tabla sin recargar la página.
+        // Este método es llamado desde AJAX para cargar o filtrar la tabla.
         [HttpGet]
         public async Task<IActionResult> GetReservas(DateTime? fecha, int? espacioId, string estado)
         {
@@ -39,40 +39,49 @@ namespace GestionReservas.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Reserva reserva)
         {
-            // Verifica que el modelo cumpla las validaciones definidas en la clase Reserva.
             if (!ModelState.IsValid)
             {
-                return Json(new 
-                { 
-                    success = false, 
-                    message = "Por favor, complete todos los campos requeridos correctamente." 
+                return Json(new
+                {
+                    success = false,
+                    message = "Por favor, complete todos los campos requeridos correctamente."
                 });
             }
 
-            // Envía la reserva al servicio, donde se valida y se guarda en la base de datos.
             var result = await _reservaService.RegistrarReservaAsync(reserva);
 
-            // Devuelve una respuesta JSON para que jQuery muestre el resultado en la página.
-            return Json(new 
-            { 
-                success = result.Success, 
-                message = result.Message 
+            return Json(new
+            {
+                success = result.Success,
+                message = result.Message
             });
         }
 
-        // Cancela una reserva existente.
-        // Este método se llama desde AJAX cuando el usuario confirma la cancelación.
+        // Cancela una reserva vigente.
+        // No elimina el registro; solo cambia su estado a Cancelada.
         [HttpPost]
         public async Task<IActionResult> Cancelar(int id)
         {
-            // La lógica de cancelación se maneja en el servicio.
             var result = await _reservaService.CancelarReservaAsync(id);
 
-            // Devuelve el resultado para actualizar la interfaz sin recargar la página.
-            return Json(new 
-            { 
-                success = result.Success, 
-                message = result.Message 
+            return Json(new
+            {
+                success = result.Success,
+                message = result.Message
+            });
+        }
+
+        // Elimina definitivamente una reserva cancelada.
+        // Esta acción solo debe usarse después de cancelar la reserva.
+        [HttpPost]
+        public async Task<IActionResult> Eliminar(int id)
+        {
+            var result = await _reservaService.EliminarReservaAsync(id);
+
+            return Json(new
+            {
+                success = result.Success,
+                message = result.Message
             });
         }
     }
